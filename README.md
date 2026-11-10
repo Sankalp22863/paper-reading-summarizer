@@ -23,6 +23,7 @@ npm run preview
 
 - Tile library with full-text metadata/notes search, topic and status filters, and title/date sorting.
 - Add/edit paper metadata, reading status, a short takeaway, methods, findings, limitations, next steps, and reading notes.
+- Upload a PDF first to autofill title, authors, publication year, venue, DOI/arXiv link, and abstract when detectable. PDF.js reads embedded metadata and the first two pages locally in your browser. Review the suggestions before saving; existing entries and manual corrections are preserved. Scanned PDFs require manual entry (no OCR).
 - Attach, replace, reopen, and delete annotated PDFs up to 25 MB. Local PDFs use IndexedDB; local metadata uses localStorage.
 - Topic suggestions grounded in the existing **read** papers. Suggestions are editable and require acceptance. See [detect_paper_words.md](detect_paper_words.md).
 - Related papers from the library, plus on-demand Crossref topic search and a flow to add results to the reading list.
@@ -70,7 +71,7 @@ Notability documents PDF backups to Box, Dropbox, Google Drive, OneDrive, and We
 
 ## Tests
 
-`npm test` exercises group evidence, cold-start behavior, self-exclusion, paper connections, monthly goal counting, safe links, and excerpt behavior. `npm run test:e2e` checks the local UI, uploads/persistence, reading goals, and responsive layout using Playwright. Install its Chromium browser with `npx playwright install chromium`, or set `PLAYWRIGHT_CHROME_PATH` to a local Chrome executable. The production build is served for browser tests.
+`npm test` exercises PDF metadata inference, preservation of user edits, group evidence, cold-start behavior, self-exclusion, paper connections, monthly goal counting, safe links, and excerpt behavior. `npm run test:e2e` checks PDF autofill and fallback behavior, manual overrides, saved abstracts, the local UI, uploads/persistence, reading goals, and responsive layout using Playwright. Install its Chromium browser with `npx playwright install chromium`, or set `PLAYWRIGHT_CHROME_PATH` to a local Chrome executable. The production build is served for browser tests.
 
 ## Sources
 

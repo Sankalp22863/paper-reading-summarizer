@@ -1,12 +1,12 @@
 const stop = new Set('the a an and or of in on to for with from by is are was were this that as at we our using study paper method based via into'.split(' '));
 export function tokens(text = '') { return [...new Set(text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !stop.has(w)))]; }
 export function suggestGroups(paper, library) {
-  const input = new Set(tokens([paper.title, paper.takeaway, paper.notes, paper.methods].join(' ')));
+  const input = new Set(tokens([paper.title, paper.abstract, paper.takeaway, paper.notes, paper.methods].join(' ')));
   const groups = new Map();
   for (const item of library.filter(p => p.id !== paper.id && p.status === 'Read')) {
     for (const group of item.groups || []) {
       const entry = groups.get(group) || { words: new Set(tokens(group)), titles: [] };
-      tokens([item.title, item.takeaway, item.notes, item.methods].join(' ')).forEach(w => entry.words.add(w));
+      tokens([item.title, item.abstract, item.takeaway, item.notes, item.methods].join(' ')).forEach(w => entry.words.add(w));
       entry.titles.push(item.title); groups.set(group, entry);
     }
   }
