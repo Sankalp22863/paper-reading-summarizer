@@ -1,7 +1,7 @@
 // Conservative, local heuristics. Every extracted field remains editable.
 const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
 const generic = /^(untitled|unknown|anonymous|document|user|author|notability|microsoft word|latex|acrobat)(\b|$)/i;
-const affiliation = /@|https?:|\b(university|institute|department|laborator|school|college|research center|research centre|abstract|keywords|introduction)\b/i;
+const affiliation = /@|https?:|\b(university|universidad|universidade|université|universität|institut\w*|department|laborator\w*|school|college|research center|research centre|abstract|keywords|introduction)\b/i;
 
 export function textLines(items) {
   const rows = [];
@@ -30,7 +30,10 @@ export function textLines(items) {
 }
 
 function authorLine(text) {
-  const value=clean(text.replace(/[\d*†‡§]+/g,'').replace(/\s*[,;]\s*/g,', '));
+  let value=clean(text.replace(/[\d*†‡§]+/g,'').replace(/\s*[,;]\s*/g,', '));
+  // ACM-style bylines put an author's affiliation after a comma on the same row.
+  const affiliationStart=value.search(affiliation);
+  if(affiliationStart>=0)value=value.slice(0,affiliationStart).replace(/(?:,\s*)?(?:the\s*)?$/i,'').trim();
   if (!value || affiliation.test(value) || value.length>220 || /[=:©]/.test(value)) return '';
   const names=value.split(/,|\band\b|&|;/).map(clean).filter(Boolean);
   // Avoid treating affiliations, sentences or single organization names as authors.
@@ -54,19 +57,22 @@ export function inferMetadata({info={},xmp={},pages=[]}={}) {
   const title=embeddedTitle.length>=8 && !generic.test(embeddedTitle) && !/\.(pdf|docx?|tex)$/i.test(embeddedTitle)?embeddedTitle:layoutTitle;
   const embeddedAuthors=clean(Array.isArray(xmp.authors)?xmp.authors.join(', '):xmp.authors||info.Author);
   let authors=embeddedAuthors && !generic.test(embeddedAuthors) && !affiliation.test(embeddedAuthors)?embeddedAuthors:'';
-  if (!authors && titleLines.length) {
+  let authorEnd=-1;
+  if (titleLines.length) {
     const start=front.indexOf(titleLines.at(-1))+1;
     const authorRows=[];
-    for(const line of front.slice(start,start+8)) {
+    for(let i=start;i<Math.min(start+12,front.length);i++) {
+      const line=front[i];
       const parsed=authorLine(line.text);
-      if(parsed)authorRows.push(parsed);
-      else if(authorRows.length)break;
+      if(parsed){authorRows.push(parsed);authorEnd=i;}
+      else if(authorRows.length && !affiliation.test(line.text))break;
     }
-    authors=[...new Set(authorRows)].join(', ');
+    if(!authors)authors=[...new Set(authorRows)].join(', ');
   }
   // Only front-matter identifiers: do not pick a DOI from a reference list.
   const frontText=text.split(/\n\s*(?:\d+\.?\s+)?(?:references|bibliography)\s*\n/i)[0];
-  const doi=frontText.match(/\b10\.\d{4,9}\/[-._;()/:A-Z0-9]+/i)?.[0]?.replace(/[.,;:)]+$/,'');
+  const doiCandidates=frontText.match(/\b10\.\d{4,9}\/[-._;()/:A-Z0-9]+/gi)||[];
+  const doi=doiCandidates.map(value=>value.replace(/[.,;:)]+$/,'')).find(value=>!/^10\.\d+\/[0.]+$/.test(value));
   const arxiv=frontText.match(/(?:arxiv\s*:\s*|arxiv\.org\/(?:abs|pdf)\/)(\d{4}\.\d{4,5}(?:v\d+)?|[a-z-]+\/\d{7}(?:v\d+)?)/i)?.[1];
   const url=doi?`https://doi.org/${doi}`:arxiv?`https://arxiv.org/abs/${arxiv}`:'';
   const venueLine=front.find(l=>/\b(proceedings|conference|symposium|journal|transactions|NeurIPS|ICML|ICLR|ISCA|MICRO|ASPLOS|OSDI|PLDI|POPL|HPCA)\b/i.test(l.text)&&l.text!==title&&l.text.length<240);
@@ -74,7 +80,19 @@ export function inferMetadata({info={},xmp={},pages=[]}={}) {
   // PDF creation dates commonly reflect an export, not publication; ignore them.
   const year=venue.match(/\b(?:19|20)\d{2}\b/)?.[0] || frontText.match(/(?:©|copyright|published(?:\s+in)?|publication\s+date)\D{0,35}((?:19|20)\d{2})/i)?.[1] || frontText.match(/arxiv[^\n]{0,100}\b((?:19|20)\d{2})\b/i)?.[1] || '';
   const match=frontText.match(/(?:^|\n)abstract\s*[:.\-—–]?\s*([\s\S]*?)(?=\n\s*(?:(?:\d+[.\s]*)?introduction|keywords|index terms|ccs concepts|\d+\.?\s+[A-Z][a-z]+)\b|$)/i);
-  const abstract=match?clean(match[1]).slice(0,5000):'';
+  let abstract=match?clean(match[1]).slice(0,5000):'';
+  // Some ACM articles begin the abstract directly after the bylines, without a heading.
+  if(!abstract && authorEnd>=0) {
+    const paragraph=[];
+    for(const line of lines.slice(authorEnd+1)) {
+      if(/^(?:categories|general terms|additional key|keywords|index terms|ccs concepts|acm reference|(?:\d+\.?\s+)?introduction)\b/i.test(line.text))break;
+      if(!paragraph.length && affiliation.test(line.text))continue;
+      if(!paragraph.length && line.text.split(/\s+/).length<8)break;
+      paragraph.push(line.text);
+    }
+    const candidate=clean(paragraph.join('\n').replace(/(\p{L})-\n(?=\p{Ll})/gu,'$1'));
+    if(candidate.split(/\s+/).length>=20)abstract=candidate.slice(0,5000);
+  }
   return Object.fromEntries(Object.entries({title,authors,year,venue,url,abstract}).filter(([,v])=>v));
 }
 

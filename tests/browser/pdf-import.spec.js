@@ -44,3 +44,24 @@ test('closing the form or replacing a file cannot apply stale extraction results
  await attach(page,{title:'Second Paper Title'});
  await expect(page.getByLabel('Paper title')).toHaveValue('Second Paper Title');
 });
+test('imports inline ACM author affiliations and keeps the form open on backdrop clicks',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Add paper',exact:true}).click();
+ await attach(page,{metadata:false,rows:[
+  [12,740,'Analytical Modeling is Enough for High Performance BLIS'],
+  [10,715,'TZE MENG LOW, The University of Texas at Austin'],
+  [10,700,'FRANCISCO D. IGUAL, Universidad Complutense de Madrid'],
+  [10,685,'TYLER M. SMITH, The University of Texas at Austin'],
+  [10,670,'ENRIQUE S. QUINTANA-ORTI, Universidad Jaume I'],
+  [8,640,'We describe an example that uses analytical models to select parameters for'],
+  [8,628,'matrix multiplication across multiple levels of a memory hierarchy efficiently.'],
+  [8,605,'Categories and Subject Descriptors: Mathematical Software'],
+  [8,580,'DOI: http://dx.doi.org/10.1145/0000000.0000000'],
+  [9,550,'1. INTRODUCTION']
+ ]});
+ await expect(page.getByLabel('Paper title')).toHaveValue('Analytical Modeling is Enough for High Performance BLIS');
+ await expect(page.getByLabel('Authors',{exact:true})).toHaveValue('TZE MENG LOW, FRANCISCO D. IGUAL, TYLER M. SMITH, ENRIQUE S. QUINTANA-ORTI');
+ await expect(page.getByLabel('Original paper link')).toHaveValue('');
+ await page.mouse.click(5,5);
+ await expect(page.getByRole('dialog')).toBeVisible();
+ await expect(page.getByLabel('Authors',{exact:true})).toHaveValue('TZE MENG LOW, FRANCISCO D. IGUAL, TYLER M. SMITH, ENRIQUE S. QUINTANA-ORTI');
+});

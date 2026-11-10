@@ -23,7 +23,7 @@ npm run preview
 
 - Tile library with full-text metadata/notes search, topic and status filters, and title/date sorting.
 - Add/edit paper metadata, reading status, a short takeaway, methods, findings, limitations, next steps, and reading notes.
-- Upload a PDF first to autofill title, authors, publication year, venue, DOI/arXiv link, and abstract when detectable. PDF.js reads embedded metadata and the first two pages locally in your browser. Review the suggestions before saving; existing entries and manual corrections are preserved. Scanned PDFs require manual entry (no OCR).
+- Upload a PDF first to autofill title, authors, publication year, venue, DOI/arXiv link, and abstract when detectable. PDF.js reads embedded metadata and the first two pages locally in your browser. Review the suggestions before saving; existing entries and manual corrections are preserved. Scanned PDFs require manual entry (no OCR). Inline author affiliations (including ACM-style bylines) are separated from author names; unlabeled opening abstracts are detected when supported by the page layout. Draft placeholder DOIs are ignored.
 - Attach, replace, reopen, and delete annotated PDFs up to 25 MB. Local PDFs use IndexedDB; local metadata uses localStorage.
 - Topic suggestions grounded in the existing **read** papers. Suggestions are editable and require acceptance. See [detect_paper_words.md](detect_paper_words.md).
 - Related papers from the library, plus on-demand Crossref topic search and a flow to add results to the reading list.
@@ -72,6 +72,16 @@ Notability documents PDF backups to Box, Dropbox, Google Drive, OneDrive, and We
 ## Tests
 
 `npm test` exercises PDF metadata inference, preservation of user edits, group evidence, cold-start behavior, self-exclusion, paper connections, monthly goal counting, safe links, and excerpt behavior. `npm run test:e2e` checks PDF autofill and fallback behavior, manual overrides, saved abstracts, the local UI, uploads/persistence, reading goals, and responsive layout using Playwright. Install its Chromium browser with `npx playwright install chromium`, or set `PLAYWRIGHT_CHROME_PATH` to a local Chrome executable. The production build is served for browser tests.
+
+The session-focus regression uses an isolated mocked Supabase account, so it is skipped in the default local-mode suite. To run it (with `PLAYWRIGHT_CHROME_PATH` set if using installed Chrome):
+
+```sh
+VITE_SUPABASE_URL=https://papertrail-auth-test.supabase.co VITE_SUPABASE_ANON_KEY=sb_publishable_test npm run build
+AUTH_REGRESSION=1 npm run test:e2e -- tests/browser/auth-focus.spec.js
+npm run build
+```
+
+This checks that returning to a tab and repeat sign-in notifications preserve the open form, notes, and selected PDF, while actual sign-out clears private state. All test account requests are intercepted; no real Supabase account is used.
 
 ## Sources
 

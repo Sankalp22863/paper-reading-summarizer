@@ -30,3 +30,23 @@ test('combines title fragments in reading order and ignores rotated sidebars',()
  const rows=textLines([{str:'Systems',transform:[18,0,0,18,140,740],width:70},{str:'Memory',transform:[18,0,0,18,50,740],width:85},{str:'Sidebar',transform:[0,10,-10,0,10,100],width:40}]);
  assert.equal(rows.length,1);assert.equal(rows[0].text,'Memory Systems');
 });
+test('ACM bylines separate all authors from English and Spanish affiliations',()=>{
+ const result=inferMetadata({pages:[[
+  line('Analytical Modeling is Enough for High Performance BLIS',12,700),
+  line('TZE MENG LOW, The University of Texas at Austin',10,680),
+  line('FRANCISCO D. IGUAL, Universidad Complutense de Madrid',10,665),
+  line('TYLER M. SMITH, The University of Texas at Austin',10,650),
+  line('ENRIQUE S. QUINTANA-ORTI, Universidad Jaume I',10,635),
+  line('We study an example of matrix multiplication using analytical models to choose',8,600),
+  line('parameters for efficient execution across several levels of the memory hierarchy.',8,590),
+  line('Categories and Subject Descriptors: Mathematical Software',8,570),
+  line('DOI: http://dx.doi.org/10.1145/0000000.0000000',8,550),
+  line('1. INTRODUCTION',9,530)
+ ]]});
+ assert.equal(result.title,'Analytical Modeling is Enough for High Performance BLIS');
+ assert.equal(result.authors,'TZE MENG LOW, FRANCISCO D. IGUAL, TYLER M. SMITH, ENRIQUE S. QUINTANA-ORTI');
+ assert.ok(result.abstract.startsWith('We study an example'));
+ assert.ok(!result.abstract.includes('Categories'));
+ assert.equal(result.url,undefined);
+ assert.equal(result.year,undefined);
+});
