@@ -1,0 +1,51 @@
+import {test,expect} from '@playwright/test';
+test('paper, annotation, grouping, goal and deletion persist correctly',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/');
+  await expect(page.locator('.paper-card')).toHaveCount(6);
+  await page.getByRole('button',{name:'Add paper',exact:true}).click();
+  await page.getByLabel('Paper title').fill('Memory bandwidth for efficient accelerators');
+  await page.getByLabel('Authors',{exact:true}).fill('Test Researcher');
+  await page.getByLabel('Reading notes',{exact:true}).fill('Memory hierarchy and data movement dominate accelerator energy. Compiler schedules improve data reuse.');
+  await page.getByRole('button',{name:/\+ Memory systems/}).click();
+  await page.getByRole('button',{name:'Use opening notes'}).click();
+  await page.getByLabel('Annotated PDF',{exact:true}).setInputFiles({name:'annotated.pdf',mimeType:'application/pdf',buffer:Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n%%EOF')});
+  await page.getByRole('dialog').getByRole('button',{name:'Add paper',exact:true}).click();
+  await expect(page.getByRole('dialog').getByRole('heading',{name:'Memory bandwidth for efficient accelerators'})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Open annotated PDF'})).toBeVisible();
+  const popupPromise=page.waitForEvent('popup');
+  await page.getByRole('button',{name:'Open annotated PDF'}).click();
+  const popup=await popupPromise;await popup.close();
+  await page.getByRole('button',{name:'Mark read',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Mark read',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'Close dialog'}).click();
+  await page.reload();
+  await page.getByRole('textbox',{name:'Search library'}).fill('Memory bandwidth for efficient accelerators');
+  await expect(page.locator('.paper-card')).toHaveCount(1);
+  await expect(page.locator('.paper-card')).toContainText('Read');
+  await page.getByRole('button',{name:'Reading goals',exact:true}).click();
+  await page.getByRole('button',{name:'Set a goal'}).click();
+  await page.getByLabel('Goal name').fill('Study memory systems');
+  await page.getByLabel('Papers to finish').fill('2');
+  await page.getByLabel('Focus topic').selectOption('Memory systems');
+  await page.getByRole('button',{name:'Create goal'}).click();
+  const goal=page.locator('.goal-panel').filter({hasText:'Study memory systems'});
+  await expect(goal).toContainText('100% complete');
+  await page.getByRole('button',{name:/^Library/}).click();
+  await page.locator('.paper-card').click();
+  await page.getByRole('button',{name:'Delete paper',exact:true}).click();
+  await page.getByRole('button',{name:'Delete paper',exact:true}).click();
+  await expect(page.getByText('No papers match these filters')).toBeVisible();
+  await page.reload();
+  await expect(page.locator('.paper-card')).toHaveCount(6);
+  expect(errors).toEqual([]);
+});
+test('invalid PDF is rejected without creating a paper',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Add paper',exact:true}).click();await page.getByLabel('Paper title').fill('Invalid upload');await page.getByLabel('Annotated PDF',{exact:true}).setInputFiles({name:'wrong.pdf',mimeType:'application/pdf',buffer:Buffer.from('not a pdf')});await page.getByRole('dialog').getByRole('button',{name:'Add paper',exact:true}).click();await expect(page.getByRole('alert')).toContainText('valid PDF');await page.getByRole('button',{name:'Cancel',exact:true}).click();await expect(page.locator('.paper-card')).toHaveCount(6);
+});
+test('mobile navigation, empty filters, and local account messaging',async({page})=>{
+ await page.setViewportSize({width:390,height:844});await page.goto('/');await expect(page.locator('.paper-card')).toHaveCount(6);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);await page.getByRole('textbox',{name:'Search library'}).fill('no matches anywhere');await expect(page.getByText('No papers match these filters')).toBeVisible();await page.getByRole('button',{name:'Reset filters'}).click();await expect(page.locator('.paper-card')).toHaveCount(6);await page.getByRole('button',{name:'Log in',exact:true}).click();await expect(page.getByText('Login and signup require a connected Supabase project.')).toBeVisible();await page.getByRole('button',{name:'Continue locally'}).click();await page.getByRole('button',{name:'Toggle navigation'}).click();await page.getByRole('button',{name:'Settings & imports'}).click();await expect(page.getByRole('heading',{name:'Notability imports'})).toBeVisible();
+});
+test('discovery can add results and handle service errors',async({page})=>{
+ await page.route('https://api.crossref.org/**',route=>route.fulfill({json:{message:{items:[{DOI:'10.1234/example',title:['Compiler-aware memory planning'],author:[{given:'A',family:'Researcher'}],published:{'date-parts':[[2024]]},'container-title':['Test venue'],URL:'https://doi.org/10.1234/example'}]}}}));await page.goto('/');await page.getByRole('button',{name:'Discover',exact:true}).click();await page.getByRole('button',{name:'Find published papers'}).click();await expect(page.getByRole('heading',{name:'Compiler-aware memory planning'})).toBeVisible();await page.getByRole('button',{name:'Add to reading list'}).click();await expect(page.getByLabel('Paper title')).toHaveValue('Compiler-aware memory planning');await page.getByRole('button',{name:'Cancel',exact:true}).click();await page.route('https://api.crossref.org/**',route=>route.fulfill({status:503,body:'Unavailable'}));await page.getByRole('button',{name:'Find published papers'}).click();await expect(page.getByRole('alert')).toContainText('Paper search is unavailable');
+});

@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {suggestGroups,relatedPapers,goalProgress,safeUrl,draftTakeaway} from '../src/research.js';
+const library=[{id:'a',title:'Memory bandwidth and data movement',takeaway:'Memory hierarchy and accelerator data reuse',status:'Read',groups:['Memory systems'],completedAt:'2026-11-02'}, {id:'b',title:'Compiler scheduling and loop tiling',status:'To read',groups:['Compilers']}];
+test('groups come from read-paper evidence, not unread groups',()=>{const result=suggestGroups({title:'Accelerator memory bandwidth and compiler scheduling'},library);assert.deepEqual(result.map(g=>g.name),['Memory systems']);assert.ok(result[0].evidence.includes(library[0].title));});
+test('no grouping fabricated for cold start or unrelated text',()=>{assert.deepEqual(suggestGroups({title:'Memory hierarchy'},[]),[]);assert.deepEqual(suggestGroups({title:'Biology of ocean fish'},library),[]);});
+test('editing does not use the same paper as evidence',()=>assert.deepEqual(suggestGroups(library[0],library),[]));
+test('related papers exclude the current one and rank shared groups',()=>{const results=relatedPapers({...library[0],id:'new'},library);assert.equal(results[0].id,'a');assert.equal(relatedPapers(library[0],library).some(p=>p.id==='a'),false);});
+test('monthly progress respects completion date, status, and focus',()=>{const goal={month:'2026-11',group:'Memory systems'};assert.equal(goalProgress(goal,library),1);assert.equal(goalProgress({...goal,month:'2026-10'},library),0);assert.equal(goalProgress({...goal,group:'Compilers'},library),0);assert.equal(goalProgress(goal,[{...library[0],status:'Reading'}]),0);});
+test('links exclude executable and invalid protocols',()=>{assert.equal(safeUrl('javascript:alert(1)'),'');assert.equal(safeUrl('data:text/html,hello'),'');assert.equal(safeUrl('not a url'),'');assert.equal(safeUrl('https://doi.org/10.1/example'),'https://doi.org/10.1/example');});
+test('takeaway helper only excerpts user notes',()=>{assert.equal(draftTakeaway('First finding. Second finding. Third finding.'),'First finding. Second finding.');assert.equal(draftTakeaway(''),'');});
