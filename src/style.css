@@ -513,20 +513,28 @@ input[type=file]::file-selector-button { font: inherit; background: var(--panel-
 .stack-report.compact p { font-size: 12px; line-height: 1.7; color: var(--dim); margin-bottom: 8px }
 .stack-report.compact .panel-title svg { color: var(--magenta) }
 @media (max-width: 720px) { .stack-visual { display: none } }
-/* Visibility */
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
-.card-badges { display: inline-flex; align-items: center; gap: 8px }
-.visibility { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--faint) }
-.visibility.public { color: var(--cyan) }
-.tags .visibility { border: 1px solid var(--border-strong); padding: 2px 7px; border-radius: 2px }
-.tags .visibility.public { border-color: #79c0ff55 }
-.visibility-toggle { border: 0; padding: 0; margin: 0 0 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px }
-.visibility-toggle legend { font-size: 12px; color: var(--dim); margin-bottom: 6px; padding: 0 }
-.visibility-toggle .muted { font-size: 11px; flex: 1; min-width: 220px }
-.segmented { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 2px }
-.modal-body .segmented label { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 7px 14px; font-size: 12px; color: var(--dim); cursor: pointer }
-.modal-body .segmented label + label { border-left: 1px solid var(--border-strong) }
-.modal-body .segmented label.on { background: var(--accent-dim); color: var(--accent) }
-.modal-body .segmented label:has(input[value=public]).on { background: #79c0ff1a; color: var(--cyan) }
-.modal-body .segmented label:focus-within { outline: 1px solid var(--accent) }
-.modal-body .segmented input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0 }
+/* Summary points */
+.points { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px }
+.points li { font-size: 12px; line-height: 1.65; color: var(--fg); background: var(--bg); border: 1px solid var(--border); border-left: 2px solid var(--amber); border-radius: 2px; padding: 8px 11px; white-space: pre-wrap }
+/* Star ratings */
+.stars { display: inline-flex; align-items: center; gap: 1px; color: var(--border-strong) }
+.stars svg.on, .stars button.on { color: var(--amber) }
+.stars svg.on { fill: var(--amber) }
+.stars.input button { border: 0; background: transparent; padding: 2px; color: var(--faint) }
+.stars.input button.on { color: var(--amber) }
+.stars.input button.on svg { fill: var(--amber) }
+.stars.input button:hover { background: transparent }
+.rating-field { border: 1px solid var(--border); border-radius: 2px; padding: 12px 14px; margin: 0 0 14px; background: var(--bg) }
+.rating-head { font-size: 12px; color: var(--fg); margin-bottom: 8px }
+.rating-head .muted { font-size: 11px }
+.rating-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 12px; color: var(--fg); border-top: 1px dashed var(--border) }
+.rating-row:first-of-type { border-top: 0 }
+.tag-stars { color: var(--amber) }
+.community-ratings, .my-ratings { display: flex; flex-direction: column; gap: 4px; margin: 10px 0 12px; padding: 10px 12px; border: 1px solid var(--border); border-left: 2px solid var(--amber); background: var(--bg); border-radius: 2px }
+.community-ratings.muted { display: block; border-left-color: var(--border-strong); font-size: 11px }
+.community-label { font-size: 11px; color: var(--amber) }
+.community-label::before { content: '> ' }
+.community-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--fg) }
+.community-topic { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.community-row b { color: var(--fg-bright); font-weight: 600 }
+.community-row small { color: var(--faint); font-size: 11px }

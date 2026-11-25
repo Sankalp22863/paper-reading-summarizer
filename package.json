@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --test tests/*.test.js",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:rls": "bash tests/sql/rls-check.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.80.0",

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {suggestGroups,relatedPapers,goalProgress,goalTarget,safeUrl,draftTakeaway,shortAuthors} from '../src/research.js';
+import {suggestGroups,relatedPapers,goalProgress,goalTarget,safeUrl,draftTakeaway,shortAuthors,toPoints} from '../src/research.js';
 const library=[{id:'a',title:'Memory bandwidth and data movement',takeaway:'Memory hierarchy and accelerator data reuse',status:'Read',groups:['Memory systems'],completedAt:'2026-11-02'}, {id:'b',title:'Compiler scheduling and loop tiling',status:'To read',groups:['Compilers']}];
 test('groups come from read-paper evidence, not unread groups',()=>{const result=suggestGroups({title:'Accelerator memory bandwidth and compiler scheduling'},library);assert.deepEqual(result.map(g=>g.name),['Memory systems']);assert.ok(result[0].evidence.includes(library[0].title));});
 test('no grouping fabricated for cold start or unrelated text',()=>{assert.deepEqual(suggestGroups({title:'Memory hierarchy'},[]),[]);assert.deepEqual(suggestGroups({title:'Biology of ocean fish'},library),[]);});
@@ -22,3 +22,5 @@ test('paper stack uses real page counts, estimates the rest, and finds landmarks
 });
 
 test('authors collapse to first author et al.',()=>{assert.equal(shortAuthors('Alice Smith, Bob Jones'),'Alice Smith et al.');assert.equal(shortAuthors('Alice Smith and Bob Jones'),'Alice Smith et al.');assert.equal(shortAuthors('Jane Doe'),'Jane Doe');assert.equal(shortAuthors('Tri Dao et al.'),'Tri Dao et al.');assert.equal(shortAuthors(''),'');});
+
+test('notes split into clean points',()=>{assert.deepEqual(toPoints('- First point\n\n• Second\n3. Third\n  plain line  '),['First point','Second','Third','plain line']);assert.deepEqual(toPoints(''),[]);assert.deepEqual(toPoints('One sentence only.'),['One sentence only.']);assert.deepEqual(toPoints('-1.5x speedup'),['-1.5x speedup']);});

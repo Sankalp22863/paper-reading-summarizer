@@ -35,6 +35,10 @@ export function shortAuthors(value = '') {
   const names = text.split(/\s*[,;]\s*|\s+and\s+|\s*&\s*/i).filter(Boolean);
   return names.length > 1 ? `${names[0]} et al.` : text;
 }
+/** Split a notes field into points: one per line, without leading bullets or numbering. */
+export function toPoints(text = '') {
+  return String(text || '').split(/\r?\n/).map(line => line.replace(/^\s*(?:[-*•·▪◦‣]|\d+[.)])\s+/, '').trim()).filter(Boolean);
+}
 export function safeUrl(value) { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : ''; } catch { return ''; } }
 export function draftTakeaway(notes) { return (notes || '').split(/(?<=[.!?])\s+/).filter(Boolean).slice(0,2).join(' ').slice(0,500); }
 export function goalSuggestions(papers) {

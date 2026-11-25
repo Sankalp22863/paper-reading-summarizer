@@ -31,7 +31,7 @@ test('paper, annotation, grouping, goal and deletion persist correctly',async({p
   await page.getByRole('checkbox',{name:/FlashAttention/}).check();
   await expect(page.getByLabel('Papers to finish')).toHaveValue('1');
   await expect(page.getByLabel('Papers to finish')).toHaveAttribute('readonly','');
-  await page.getByLabel('Focus topic').selectOption('Memory systems');
+  await page.getByLabel('Focus topic').fill('Memory systems');
   await page.getByRole('button',{name:'Create goal'}).click();
   const goal=page.locator('.goal-panel').filter({hasText:'Study memory systems'});
   await expect(goal).toContainText('0% complete');

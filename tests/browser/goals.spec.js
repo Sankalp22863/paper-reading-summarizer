@@ -10,9 +10,12 @@ test('goal checklist: pick and add papers, tick off requires PDF and summary',as
  await page.getByLabel('New paper title').fill('PIM survey');await page.getByLabel('New paper title').press('Enter');
  await page.getByRole('checkbox',{name:/LoRA/}).check();
  await expect(page.getByLabel('Papers to finish')).toHaveValue('2');
+ await page.getByLabel(/Focus topic/).fill('Memory');
  await page.getByRole('button',{name:'Create goal'}).click();
  const board=page.locator('.goal-board').filter({hasText:'Near-memory compute'});
  await expect(board.locator('.goal-tile')).toHaveCount(2);
+ await expect(board).toContainText('Memory');
+ await expect(page.locator('.topic-nav')).toContainText('Memory');
  await expect(board).toContainText('0/2');
  await expect(board.locator('.goal-next')).toContainText('PIM survey');
  await board.getByLabel('New paper for Near-memory compute').fill('HBM-PIM');await board.getByRole('button',{name:'Add tile'}).click();
@@ -33,16 +36,17 @@ test('goal checklist: pick and add papers, tick off requires PDF and summary',as
  await expect(page.locator('.goal-board').filter({hasText:'Near-memory compute'})).toContainText('1/3');
  expect(errors).toEqual([]);
 });
-test('papers default to private and can be made public from the form or detail view',async({page})=>{
+test('rate a paper\'s relevance per topic and see the stars on the card and in details',async({page})=>{
  await page.goto('/');await page.getByRole('button',{name:'Add paper',exact:true}).click();
- await expect(page.getByRole('radio',{name:'Private'})).toBeChecked();
- await page.getByLabel('Paper title').fill('Shared paper');
- await page.getByRole('radio',{name:'Public'}).check();
+ await page.getByLabel('Paper title').fill('Rated memory paper');
+ await page.getByLabel(/Topic groups/).fill('Memory, Compilers');
+ await page.getByRole('radiogroup',{name:'Relevance to Memory'}).getByRole('radio',{name:'4 stars'}).click();
+ await page.getByRole('radiogroup',{name:'Relevance to Compilers'}).getByRole('radio',{name:'2 stars'}).click();
+ await page.getByRole('radiogroup',{name:'Relevance to Compilers'}).getByRole('radio',{name:'2 stars'}).click(); // clicking again clears
  await page.getByRole('dialog').getByRole('button',{name:'Add paper',exact:true}).click();
- await expect(page.getByRole('dialog')).toContainText('Public');
- await page.getByRole('button',{name:'Make private'}).click();
- await expect(page.getByRole('button',{name:'Make public'})).toBeVisible();
+ await expect(page.locator('.my-ratings')).toContainText('Memory');await expect(page.locator('.my-ratings')).toContainText('4/5');
+ await expect(page.locator('.my-ratings')).not.toContainText('Compilers');
  await page.getByRole('button',{name:'Close dialog'}).click();await page.reload();
- await page.getByRole('textbox',{name:'Search library'}).fill('Shared paper');
- await expect(page.locator('.paper-card .visibility.private')).toHaveCount(1);
+ await page.getByRole('textbox',{name:'Search library'}).fill('Rated memory paper');
+ await expect(page.locator('.paper-card .tag-stars')).toHaveText(' ★4');
 });
