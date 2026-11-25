@@ -7,10 +7,10 @@
   --hover: #1a1f1d;
   --border: #222826;
   --border-strong: #323a37;
-  --fg: #d4dbd7;
-  --fg-bright: #eef3f0;
-  --dim: #8b9590;
-  --faint: #5d6762;
+  --fg: #f3f6f4;
+  --fg-bright: #ffffff;
+  --dim: #d3dad6;
+  --faint: #a7b1ac;
   --accent: #7ee787;
   --accent-dim: #7ee78722;
   --amber: #e3b341;
@@ -157,7 +157,7 @@ input, textarea, select {
   border: 1px solid var(--border-strong); background: var(--bg); border-radius: 2px;
   padding: 9px 10px; color: var(--fg); width: 100%; font-size: 12px;
 }
-input::placeholder, textarea::placeholder { color: var(--faint) }
+input::placeholder, textarea::placeholder { color: #848e89 }
 select { cursor: pointer }
 option { background: var(--panel); color: var(--fg) }
 .library-controls > select { width: 150px; font-size: 12px }
