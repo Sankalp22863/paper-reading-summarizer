@@ -24,7 +24,9 @@ export async function extractPaperDetails(file,signal) {
       pages.push(textLines((await page.getTextContent()).items));
       page.cleanup();
     }
-    return inferMetadata({info:metadata.info,xmp:{title:metadata.metadata?.get('dc:title'),authors:metadata.metadata?.get('dc:creator')},pages});
+    const details=inferMetadata({info:metadata.info,xmp:{title:metadata.metadata?.get('dc:title'),authors:metadata.metadata?.get('dc:creator')},pages});
+    // Page count is returned separately so it never counts as "detected paper details".
+    return {details,pageCount:pdf.numPages};
   } catch(error) {
     if(signal.aborted)throw new DOMException('Cancelled','AbortError');
     if(timedOut)throw new Error('PDF reading took too long. You can still fill in the details manually.');

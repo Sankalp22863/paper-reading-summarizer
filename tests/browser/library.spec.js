@@ -26,11 +26,16 @@ test('paper, annotation, grouping, goal and deletion persist correctly',async({p
   await page.getByRole('button',{name:'Reading goals',exact:true}).click();
   await page.getByRole('button',{name:'Set a goal'}).click();
   await page.getByLabel('Goal name').fill('Study memory systems');
-  await page.getByLabel('Papers to finish').fill('2');
+  await page.getByRole('button',{name:'Create goal'}).click();
+  await expect(page.getByRole('dialog').getByRole('alert')).toContainText('at least one paper');
+  await page.getByRole('checkbox',{name:/FlashAttention/}).check();
+  await expect(page.getByLabel('Papers to finish')).toHaveValue('1');
+  await expect(page.getByLabel('Papers to finish')).toHaveAttribute('readonly','');
   await page.getByLabel('Focus topic').selectOption('Memory systems');
   await page.getByRole('button',{name:'Create goal'}).click();
   const goal=page.locator('.goal-panel').filter({hasText:'Study memory systems'});
-  await expect(goal).toContainText('100% complete');
+  await expect(goal).toContainText('0% complete');
+  await expect(goal.locator('.goal-next')).toContainText('FlashAttention');
   await page.getByRole('button',{name:/^Library/}).click();
   await page.locator('.paper-card').click();
   await page.getByRole('button',{name:'Delete paper',exact:true}).click();

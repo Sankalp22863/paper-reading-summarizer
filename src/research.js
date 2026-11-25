@@ -19,7 +19,14 @@ export function relatedPapers(paper, library) {
   const words = new Set(tokens(`${paper.title} ${paper.takeaway}`));
   return library.filter(p => p.id !== paper.id).map(p => ({...p, relevance: (p.groups || []).filter(g => paper.groups?.includes(g)).length * 3 + tokens(`${p.title} ${p.takeaway}`).filter(t => words.has(t)).length})).filter(p => p.relevance > 0).sort((a,b) => b.relevance-a.relevance).slice(0,3);
 }
+export function goalPapers(goal, papers) {
+  return (goal.paperIds || []).map(id => papers.find(p => p.id === id)).filter(Boolean);
+}
+export function goalTarget(goal, papers) {
+  return goal.paperIds?.length ? goalPapers(goal, papers).length : goal.target;
+}
 export function goalProgress(goal, papers) {
+  if (goal.paperIds?.length) return goalPapers(goal, papers).filter(p => p.status === 'Read').length;
   return papers.filter(p => p.status === 'Read' && p.completedAt?.slice(0,7) === goal.month && (!goal.group || p.groups.includes(goal.group))).length;
 }
 export function safeUrl(value) { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : ''; } catch { return ''; } }
