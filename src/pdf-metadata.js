@@ -1,5 +1,18 @@
 // Conservative, local heuristics. Every extracted field remains editable.
-const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
+// Fonts often map ff/fi/fl/ffi ligatures to U+FFFF (or U+FFFD), which shows up as "Bu ￿ er".
+// Guess the ligature from the letters that follow, which is right for common English words.
+function ligature(after) {
+  const next = after.toLowerCase();
+  if (/^(cien|ce\b|ces|cult|cac|x)/.test(next)) return 'ffi';
+  if (/^(ow|ict|oat|uen|ash|ush|ag|exib|y\b|uid|at\b|oor)/.test(next)) return 'fl';
+  if (/^(er|ect|ort|ord|set|line|load|ing|s\b|e\b|ered|ers|ix)/.test(next)) return 'ff';
+  return 'fi';
+}
+export const fixLigatures = value => String(value || '').replace(/(\p{L}*)\s*[\uFFFF\uFFFD]\s*(\p{L}*)/gu, (_, before, after) => before + ligature(after) + after);
+const clean = value => fixLigatures(String(value || '')).replace(/\s+/g, ' ').trim();
+// Browsers and "print to PDF" write the page URL and the computer's user name into the metadata.
+const browserExport = /\b(safari|chrome|chromium|firefox|edge|opera|brave|print to pdf|wkhtmltopdf)\b/i;
+const urlLike = /^(https?:\/\/|www\.|arxiv\.org|doi\.org)/i;
 const generic = /^(untitled|unknown|anonymous|document|user|author|notability|microsoft word|latex|acrobat)(\b|$)/i;
 const affiliation = /@|https?:|\b(university|universidad|universidade|université|universität|institut\w*|department|laborator\w*|school|college|research center|research centre|abstract|keywords|introduction)\b/i;
 
@@ -33,7 +46,12 @@ function authorLine(text) {
   let value=clean(text.replace(/[\d*†‡§]+/g,'').replace(/\s*[,;]\s*/g,', '));
   // ACM-style bylines put an author's affiliation after a comma on the same row.
   const affiliationStart=value.search(affiliation);
-  if(affiliationStart>=0)value=value.slice(0,affiliationStart).replace(/(?:,\s*)?(?:the\s*)?$/i,'').trim();
+  if(affiliationStart>=0){
+    const head=value.slice(0,affiliationStart);
+    // Only "Name, Affiliation" bylines; "Google Carnegie Mellon University" is an affiliation row.
+    if(!/,\s*(?:the\s*)?$/i.test(head))return '';
+    value=head.replace(/(?:,\s*)?(?:the\s*)?$/i,'').trim();
+  }
   if (!value || affiliation.test(value) || value.length>220 || /[=:©]/.test(value)) return '';
   const names=value.split(/,|\band\b|&|;/).map(clean).filter(Boolean);
   // Avoid treating affiliations, sentences or single organization names as authors.
@@ -53,9 +71,11 @@ export function inferMetadata({info={},xmp={},pages=[]}={}) {
   const maxSize=Math.max(0,...candidates.map(l=>l.size));
   const titleLines=candidates.filter(l=>l.size>=maxSize*.9).slice(0,4);
   const layoutTitle=clean(titleLines.map(l=>l.text).join(' '));
-  const embeddedTitle=clean(xmp.title||info.Title);
+  const exported=browserExport.test(`${info.Creator||''} ${info.Producer||''}`);
+  const rawTitle=clean(xmp.title||info.Title);
+  const embeddedTitle=exported||urlLike.test(rawTitle)?'':rawTitle;
   const title=embeddedTitle.length>=8 && !generic.test(embeddedTitle) && !/\.(pdf|docx?|tex)$/i.test(embeddedTitle)?embeddedTitle:layoutTitle;
-  const embeddedAuthors=clean(Array.isArray(xmp.authors)?xmp.authors.join(', '):xmp.authors||info.Author);
+  const embeddedAuthors=exported?'':clean(Array.isArray(xmp.authors)?xmp.authors.join(', '):xmp.authors||info.Author);
   let authors=embeddedAuthors && !generic.test(embeddedAuthors) && !affiliation.test(embeddedAuthors)?embeddedAuthors:'';
   let authorEnd=-1;
   if (titleLines.length) {
@@ -63,6 +83,8 @@ export function inferMetadata({info={},xmp={},pages=[]}={}) {
     const authorRows=[];
     for(let i=start;i<Math.min(start+12,front.length);i++) {
       const line=front[i];
+      // Skip rows that are only affiliation markers, e.g. "1,2" or "*".
+      if(/^[\d\s,*†‡§]+$/.test(line.text))continue;
       const parsed=authorLine(line.text);
       if(parsed){authorRows.push(parsed);authorEnd=i;}
       else if(authorRows.length && !affiliation.test(line.text))break;
@@ -73,12 +95,14 @@ export function inferMetadata({info={},xmp={},pages=[]}={}) {
   const frontText=text.split(/\n\s*(?:\d+\.?\s+)?(?:references|bibliography)\s*\n/i)[0];
   const doiCandidates=frontText.match(/\b10\.\d{4,9}\/[-._;()/:A-Z0-9]+/gi)||[];
   const doi=doiCandidates.map(value=>value.replace(/[.,;:)]+$/,'')).find(value=>!/^10\.\d+\/[0.]+$/.test(value));
-  const arxiv=frontText.match(/(?:arxiv\s*:\s*|arxiv\.org\/(?:abs|pdf)\/)(\d{4}\.\d{4,5}(?:v\d+)?|[a-z-]+\/\d{7}(?:v\d+)?)/i)?.[1];
+  const arxiv=`${rawTitle}\n${frontText}`.match(/(?:arxiv\s*:\s*|arxiv\.org\/(?:abs|pdf)\/)(\d{4}\.\d{4,5}(?:v\d+)?|[a-z-]+\/\d{7}(?:v\d+)?)/i)?.[1];
   const url=doi?`https://doi.org/${doi}`:arxiv?`https://arxiv.org/abs/${arxiv}`:'';
   const venueLine=front.find(l=>/\b(proceedings|conference|symposium|journal|transactions|NeurIPS|ICML|ICLR|ISCA|MICRO|ASPLOS|OSDI|PLDI|POPL|HPCA)\b/i.test(l.text)&&l.text!==title&&l.text.length<240);
   const venue=venueLine?.text||'';
   // PDF creation dates commonly reflect an export, not publication; ignore them.
-  const year=venue.match(/\b(?:19|20)\d{2}\b/)?.[0] || frontText.match(/(?:©|copyright|published(?:\s+in)?|publication\s+date)\D{0,35}((?:19|20)\d{2})/i)?.[1] || frontText.match(/arxiv[^\n]{0,100}\b((?:19|20)\d{2})\b/i)?.[1] || '';
+  // A new-style arXiv ID starts with YYMM, e.g. 1804.11040 was posted in April 2018.
+  const arxivYear=/^\d{4}\./.test(arxiv||'')?`20${arxiv.slice(0,2)}`:'';
+  const year=venue.match(/\b(?:19|20)\d{2}\b/)?.[0] || arxivYear || frontText.match(/(?:©|copyright|published(?:\s+in)?|publication\s+date)\D{0,35}((?:19|20)\d{2})/i)?.[1] || frontText.match(/arxiv[^\n]{0,100}\b((?:19|20)\d{2})\b/i)?.[1] || '';
   const match=frontText.match(/(?:^|\n)abstract\s*[:.\-—–]?\s*([\s\S]*?)(?=\n\s*(?:(?:\d+[.\s]*)?introduction|keywords|index terms|ccs concepts|\d+\.?\s+[A-Z][a-z]+)\b|$)/i);
   let abstract=match?clean(match[1]).slice(0,5000):'';
   // Some ACM articles begin the abstract directly after the bylines, without a heading.

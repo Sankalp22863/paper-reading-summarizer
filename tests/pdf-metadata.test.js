@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {inferMetadata,mergeExtractedFields,textLines} from '../src/pdf-metadata.js';
+import {inferMetadata,mergeExtractedFields,textLines,fixLigatures} from '../src/pdf-metadata.js';
 const line=(text,size=10,y=700,x=50)=>({text,size,y,x});
 const pages=[[line('Efficient Memory Systems',18,740),line('Alice Smith, Bob Jones',12,710),line('Example University',10,690),line('Proceedings of ISCA 2024',10,670),line('doi:10.1234/memory.2024',10,650),line('Abstract',12,620),line('Memory movement matters.',10,600),line('1 Introduction',12,580),line('Body text, not part of abstract.',10,560)]];
 test('extracts front matter when a PDF has no embedded metadata',()=>{
@@ -49,4 +49,14 @@ test('ACM bylines separate all authors from English and Spanish affiliations',()
  assert.ok(!result.abstract.includes('Categories'));
  assert.equal(result.url,undefined);
  assert.equal(result.year,undefined);
+});
+test('browser-saved PDFs: ignore URL title and user-name author, keep all bylines, fix ligatures, arXiv year',()=>{
+ const L=(text,size,y,x=100)=>({text,size,y,x});
+ const pages=[[L('A Memory Controller with Row Bu ￿ er Locality Awareness',14.3,707),L('for Hybrid Memory Systems',14.3,689),L('1,2',10,669),L('HanBin Yoon',12,665),L('Justin Meza',12,665,240),L('4,2',10,653),L('Rachael A. Harding',12,649),L('Onur Mutlu',12,649,330),L('Google Carnegie Mellon University Facebook',12,625),L('This paper summarizes the idea and key contributions of the work.',10,580)]];
+ const r=inferMetadata({info:{Title:'https://arxiv.org/pdf/1804.11040',Author:'Some User',Creator:'Safari',Producer:'macOS Quartz PDFContext'},pages});
+ assert.equal(r.title,'A Memory Controller with Row Buffer Locality Awareness for Hybrid Memory Systems');
+ assert.equal(r.authors,'HanBin Yoon, Justin Meza, Rachael A. Harding, Onur Mutlu');
+ assert.equal(r.year,'2018');assert.equal(r.url,'https://arxiv.org/abs/1804.11040');
+ assert.equal(inferMetadata({info:{Title:'https://example.com/paper.pdf',Creator:'LaTeX'},pages}).title,'A Memory Controller with Row Buffer Locality Awareness for Hybrid Memory Systems');
+ for(const [broken,fixed] of [['Bu￿er','Buffer'],['signi ￿ cance','significance'],['o ￿ er','offer'],['bene￿t','benefit'],['e￿cient','efficient'],['work￿ow','workflow'],['￿rst','first'],['di￿erent','different']])assert.equal(fixLigatures(broken),fixed);
 });

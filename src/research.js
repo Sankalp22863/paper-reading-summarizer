@@ -29,6 +29,12 @@ export function goalProgress(goal, papers) {
   if (goal.paperIds?.length) return goalPapers(goal, papers).filter(p => p.status === 'Read').length;
   return papers.filter(p => p.status === 'Read' && p.completedAt?.slice(0,7) === goal.month && (!goal.group || p.groups.includes(goal.group))).length;
 }
+export function shortAuthors(value = '') {
+  const text = String(value).trim();
+  if (!text || /\bet al\.?/i.test(text)) return text;
+  const names = text.split(/\s*[,;]\s*|\s+and\s+|\s*&\s*/i).filter(Boolean);
+  return names.length > 1 ? `${names[0]} et al.` : text;
+}
 export function safeUrl(value) { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : ''; } catch { return ''; } }
 export function draftTakeaway(notes) { return (notes || '').split(/(?<=[.!?])\s+/).filter(Boolean).slice(0,2).join(' ').slice(0,500); }
 export function goalSuggestions(papers) {

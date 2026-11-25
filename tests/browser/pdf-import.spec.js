@@ -9,7 +9,7 @@ test('extracts paper fields from a real PDF and persists its abstract',async({pa
  await page.goto('/');await page.getByRole('button',{name:'Add paper',exact:true}).click();
  await attach(page);
  await expect(page.getByLabel('Paper title')).toHaveValue('Efficient Memory Systems');
- await expect(page.getByLabel('Authors',{exact:true})).toHaveValue('Alice Smith, Bob Jones');
+ await expect(page.getByLabel('Authors',{exact:true})).toHaveValue('Alice Smith et al.');
  await expect(page.getByLabel('Year',{exact:true})).toHaveValue('2024');
  await expect(page.getByLabel('Venue',{exact:true})).toHaveValue('Proceedings of ISCA 2024');
  await expect(page.getByLabel('Original paper link')).toHaveValue('https://doi.org/10.1234/memory.2024');
@@ -26,7 +26,7 @@ test('falls back to page text and preserves manual entries on replacement',async
  await page.getByLabel('Paper title').fill('My custom title');
  await attach(page,{metadata:false});
  await expect(page.getByLabel('Paper title')).toHaveValue('My custom title');
- await expect(page.getByLabel('Authors',{exact:true})).toHaveValue('Alice Smith, Bob Jones');
+ await expect(page.getByLabel('Authors',{exact:true})).toHaveValue('Alice Smith et al.');
  await page.getByLabel('Authors',{exact:true}).fill('Corrected Author');
  await attach(page,{title:'Another Research Paper',authors:'Jane Doe',metadata:false});
  await expect(page.getByLabel('Paper title')).toHaveValue('My custom title');
@@ -59,9 +59,9 @@ test('imports inline ACM author affiliations and keeps the form open on backdrop
   [9,550,'1. INTRODUCTION']
  ]});
  await expect(page.getByLabel('Paper title')).toHaveValue('Analytical Modeling is Enough for High Performance BLIS');
- await expect(page.getByLabel('Authors',{exact:true})).toHaveValue('TZE MENG LOW, FRANCISCO D. IGUAL, TYLER M. SMITH, ENRIQUE S. QUINTANA-ORTI');
+ await expect(page.getByLabel('Authors',{exact:true})).toHaveValue('TZE MENG LOW et al.');
  await expect(page.getByLabel('Original paper link')).toHaveValue('');
  await page.mouse.click(5,5);
  await expect(page.getByRole('dialog')).toBeVisible();
- await expect(page.getByLabel('Authors',{exact:true})).toHaveValue('TZE MENG LOW, FRANCISCO D. IGUAL, TYLER M. SMITH, ENRIQUE S. QUINTANA-ORTI');
+ await expect(page.getByLabel('Authors',{exact:true})).toHaveValue('TZE MENG LOW et al.');
 });

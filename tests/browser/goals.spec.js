@@ -33,3 +33,16 @@ test('goal checklist: pick and add papers, tick off requires PDF and summary',as
  await expect(page.locator('.goal-board').filter({hasText:'Near-memory compute'})).toContainText('1/3');
  expect(errors).toEqual([]);
 });
+test('papers default to private and can be made public from the form or detail view',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Add paper',exact:true}).click();
+ await expect(page.getByRole('radio',{name:'Private'})).toBeChecked();
+ await page.getByLabel('Paper title').fill('Shared paper');
+ await page.getByRole('radio',{name:'Public'}).check();
+ await page.getByRole('dialog').getByRole('button',{name:'Add paper',exact:true}).click();
+ await expect(page.getByRole('dialog')).toContainText('Public');
+ await page.getByRole('button',{name:'Make private'}).click();
+ await expect(page.getByRole('button',{name:'Make public'})).toBeVisible();
+ await page.getByRole('button',{name:'Close dialog'}).click();await page.reload();
+ await page.getByRole('textbox',{name:'Search library'}).fill('Shared paper');
+ await expect(page.locator('.paper-card .visibility.private')).toHaveCount(1);
+});
