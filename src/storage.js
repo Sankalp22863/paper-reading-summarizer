@@ -1,6 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { initialData } from './data';
 export const cloud = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY ? createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY) : null;
+/** Whether the Google provider is switched on in this Supabase project. */
+export async function googleEnabled() {
+  const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/settings`, {headers: {apikey: import.meta.env.VITE_SUPABASE_ANON_KEY}});
+  if (!res.ok) throw new Error('Could not read auth settings.');
+  return Boolean((await res.json())?.external?.google);
+}
 const key = 'papertrail-library-v1';
 export function localLoad() { const value = localStorage.getItem(key); if (!value) return initialData(); const data = JSON.parse(value); if (!Array.isArray(data.papers) || !Array.isArray(data.goals)) throw new Error('The saved library is invalid. Export a backup before making changes.'); return data; }
 export async function loadLibrary(user) { if (!user) return localLoad(); const {data,error} = await cloud.from('libraries').select('data').eq('user_id',user.id).maybeSingle(); if(error) throw error; return data?.data || {papers:[], goals:[]}; }

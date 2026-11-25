@@ -50,3 +50,20 @@ test('rate a paper\'s relevance per topic and see the stars on the card and in d
  await page.getByRole('textbox',{name:'Search library'}).fill('Rated memory paper');
  await expect(page.locator('.paper-card .tag-stars')).toHaveText(' ★4');
 });
+test('clicking a summary field opens a large editor; Esc closes only the editor',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'Add paper',exact:true}).click();
+ await page.getByLabel('Paper title').fill('Editor test');
+ await page.getByRole('textbox',{name:'Methods',exact:true}).click();
+ const big=page.getByRole('textbox',{name:'Methods (expanded)'});
+ await expect(big).toBeFocused();
+ await big.fill('First step\nSecond step');
+ await page.keyboard.press('Escape');
+ await expect(big).toHaveCount(0);
+ await expect(page.getByRole('dialog')).toBeVisible();
+ await expect(page.getByRole('textbox',{name:'Methods',exact:true})).toHaveValue('First step\nSecond step');
+ await page.getByRole('button',{name:'Expand Key findings'}).click();
+ await page.getByRole('textbox',{name:'Key findings (expanded)'}).fill('Big result');
+ await page.getByRole('button',{name:'Done'}).click();
+ await page.getByRole('dialog').getByRole('button',{name:'Add paper',exact:true}).click();
+ await expect(page.locator('.points li')).toHaveText(['First step','Second step','Big result']);
+});

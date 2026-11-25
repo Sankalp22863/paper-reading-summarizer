@@ -538,3 +538,24 @@ input[type=file]::file-selector-button { font: inherit; background: var(--panel-
 .community-topic { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .community-row b { color: var(--fg-bright); font-weight: 600 }
 .community-row small { color: var(--faint); font-size: 11px }
+/* Google sign-in */
+.google-button { background: #fff; color: #1f1f1f; border-color: #dadce0; font-weight: 600; padding: 11px 16px; gap: 10px }
+.google-button:hover { background: #f2f2f2; border-color: #c6c6c6 }
+.google-button:disabled { opacity: .5 }
+/* Expanded text editor */
+.label-line { display: flex; align-items: center; justify-content: space-between }
+.expand-button { border: 0; background: transparent; padding: 2px 4px; color: var(--faint) }
+.expand-button:hover { background: transparent; color: var(--accent) }
+.modal-body textarea:not(.expanded-panel textarea) { cursor: text }
+.expanded-editor { padding: 0; border: 0; background: transparent; width: min(900px, calc(100vw - 48px)); max-width: none; height: min(640px, calc(100vh - 48px)); max-height: none; overflow: visible; color: var(--fg) }
+.expanded-editor::backdrop { background: #000000b8 }
+.expanded-panel { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--accent); border-radius: 2px; box-shadow: 0 20px 60px #000c }
+.expanded-head { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--panel-2) }
+.expanded-head strong { color: var(--fg-bright); font-size: 14px }
+.expanded-head .muted { flex: 1; font-size: 11px }
+.expanded-head .primary { padding: 7px 12px }
+.expanded-panel textarea { flex: 1; margin: 0; border: 0; border-radius: 0; background: var(--bg); padding: 18px 20px; font-size: 14px; line-height: 1.8; resize: none; outline: none }
+@media (max-width: 720px) { .expanded-editor { width: 100vw; height: 100vh } .expanded-head .muted { display: none } }
+.expand-field { margin-bottom: 16px; font-size: 12px; color: var(--dim) }
+.expand-field .label-line label { margin: 0 }
+.expand-field textarea { display: block; margin-top: 6px }

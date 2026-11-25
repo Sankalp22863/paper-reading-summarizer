@@ -28,7 +28,7 @@ npm run preview
 - Topic suggestions grounded in the existing **read** papers. Suggestions are editable and require acceptance. See [detect_paper_words.md](detect_paper_words.md).
 - Related papers from the library, plus on-demand Crossref topic search and a flow to add results to the reading list.
 - Monthly reading goals, optional topic focus, completion tracking, and library-based planning suggestions.
-- Supabase email/password signup, confirmation, login, and logout when configured. Cloud libraries start empty and stay separate from the local example workspace.
+- Sign in with Google (via Supabase) and logout when configured; no separate password. Cloud libraries start empty and stay separate from the local example workspace.
 - Export metadata, notes, and goals as JSON. PDF bytes are not included; retain original PDFs separately. JSON restore is not currently implemented.
 - Assistant guidance in [agent.md](agent.md). This is an instruction file, not a running scheduled agent.
 
@@ -39,14 +39,18 @@ The current takeaway helper copies the first two sentences of your notes. It is 
 GitHub Pages serves static files; it cannot itself run authentication or store uploaded private PDFs. This app uses Supabase for those services.
 
 1. Create a Supabase project and run [supabase/schema.sql](supabase/schema.sql) once in its SQL editor. It creates a per-user library table, row-level access policies, and a private `papers` storage bucket limited to PDFs up to 25 MB.
-2. In Supabase Authentication, enable email/password sign-in and email confirmation. Set your Site URL to the deployed app URL. Add the deployed URL and your local development URL to the permitted redirect URLs.
+2. Enable Google sign-in:
+   - In [Google Cloud Console](https://console.cloud.google.com/apis/credentials), configure the OAuth consent screen, then create an **OAuth client ID** of type *Web application*. Under **Authorized redirect URIs** add `https://<your-project-ref>.supabase.co/auth/v1/callback` (shown on Supabase's Google provider page).
+   - In Supabase → **Authentication → Providers → Google**, turn it on and paste the client ID and client secret.
+   - In Supabase → **Authentication → URL Configuration**, set **Site URL** to the deployed app URL and add the deployed URL and `http://127.0.0.1:5173/` to **Redirect URLs**.
+   - Optionally turn off the Email provider, since the app no longer shows a password form. Supabase links a Google login to an existing account with the same verified email, so earlier email/password users keep their library.
 3. Copy `.env.example` to `.env.local`. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to the project URL and **publishable / anon** key. Never use a secret or service-role key in the frontend.
-4. Restart Vite, sign up, confirm the email, and sign in. Account libraries are distinct from local data; local papers are not silently uploaded.
+4. Restart Vite and choose **Continue with Google**. Account libraries are distinct from local data; local papers are not silently uploaded.
 5. For production, add the same two values as GitHub repository **Actions variables**, then rebuild/deploy.
 
 The application stores one JSON library document per account. Concurrent edits from different tabs/devices use last-write-wins behavior; avoid editing the same account simultaneously. Live Supabase authentication and row-level policies need verification against your configured project before relying on the deployment for private research.
 
-Suggested project verification: create two test users; save a paper and upload a PDF as user A; ensure user B cannot query A's library, read A's file path, create a signed URL for it, or upload into A's folder. Logged-out visitors must not read either library.
+Suggested project verification: sign in with two different Google accounts; save a paper and upload a PDF as user A; ensure user B cannot query A's library, read A's file path, create a signed URL for it, or upload into A's folder. Logged-out visitors must not read either library.
 
 ## Publish on GitHub Pages
 
